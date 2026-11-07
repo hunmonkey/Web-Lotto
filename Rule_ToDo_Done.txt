@@ -119,3 +119,18 @@ AI 가 정한 기본값(재훈 님이 바꾸라고 하면 바꾼다): 기술 스
    (서버 안 http 시험은 쿠키가 Secure 라 curl 이 쿠키를 안 보내 쿠키 값을 헤더로 직접 실었다. 처음 시험 스크립트의 따옴표 실수로 일부 curl 이 이 PC 에서 돈 것을 발견해 서버에서 다시 확인했다.)
    서버의 임시 파일(/tmp 쿠키 · 배포 로그) 지움. 바깥 https://lotto.jaehoon.org/login → HTTP 502(NPM 호스트가 없어서 - 예상한 결과).
    ★ 미검증: 바깥 https 접속 · NPM 이 실제 접속자 주소(X-Forwarded-For)를 넘기는지(지금은 도커 사설 주소로 보임) · 실제 엑셀 올리기 · 브라우저로 운영 화면 보기 - NPM 호스트를 더한 뒤.
+
+------------------------------------------------------------
+[2026-11-07 NPM 연결 · 바깥 주소 확인]
+
+[완료] 9. NPM 호스트 연결과 바깥 주소 확인  (2026-11-07 11:30 → 11:40)
+  어디: NPM Proxy Host lotto.jaehoon.org(재훈 님이 NPM 화면에서 직접 추가) · Rule_Project_Etc.txt 0장
+  무엇/어떻게: 재훈 님이 호스트를 추가했는데 Forward Hostname/IP 가 192.168.85.10(서버 LAN 주소)이라 502 였다. 앱은 docker0 주소(172.17.0.1)에만 열려 있어 그 주소로는 연결을 받지 않는다.
+   원인 확인(읽기만): NPM 오류 로그 'connect() failed (111: Connection refused) … upstream: http://192.168.85.10:7682' · NPM 상자 안에서 172.17.0.1:7682/healthz 200 ·
+   NPM(1880)에 Host 헤더로 요청하면 lotto 502 · qna 200. → 재훈 님이 Forward IP 를 172.17.0.1 로 고쳐 열림. Force SSL 은 켜지 않는다(서버의 QnA 호스트 설정에도 없음 -
+   앞서 AI 가 '켜라' 고 안내한 것은 틀렸다). SSL 은 *.jaehoon.org(npm-73) · HTTP/2.
+  검증(PC 에서 curl, https): /login 200 + 헤더(CSP · HSTS · nosniff · DENY · noindex · no-store, Server: cloudflare) · 틀린 비밀번호 401 · 맞는 비밀번호 303 + 쿠키(HttpOnly · Secure · SameSite=lax · 12시간) ·
+   로그인 뒤 / 200(제목 '로또 예상번호') · 헤더 없이 POST 403 · 번호 만들기 5게임 정상 · 히스토리 빈 목록 · 로그인 없이 /api 401 · 정적 css · js 200.
+   서버 로그: 접속자 주소가 공인 주소로 찍힘(NPM X-Real-IP · X-Forwarded-For · set_real_ip_from 172.16.0.0/12 설정 확인) → 접속자별 로그인 잠금이 따로 센다.
+   참고: 기본 Python(urllib) 요청은 Cloudflare 가 403 으로 막는다(영역 전체 봇 방어로 보임). 브라우저 · curl 은 통과. 시험은 curl 로 했고 시험용 쿠키 파일 · 서버 접속 도우미는 지움.
+   ★ 미검증: 실제 당첨번호 엑셀 올리기 · 폰 실기기 · 재훈 님 PC 브라우저에서 로그인 후 화면(로그인 화면은 재훈 님이 확인).
