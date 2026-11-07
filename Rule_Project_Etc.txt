@@ -21,7 +21,7 @@ Web-Lotto 한 줄: 로또 6/45 의 '예상번호' 를 만들어 보여 주는 �
   ★ 지금 Rule_PW.txt 는 Web-Mew1 의 것을 그대로 복사한 것이다 - MEW 운영 값이 섞여 있으니 Web-Lotto 에 쓸 줄만 남기도록 재훈 님이 정리한다.
 - 운영 반영(2026-11-07 재훈 님 결정): 서버 환인(Hwan-In, Rule_PW 의 UNRAID_HOST) · 주소 https://lotto.jaehoon.org · 안쪽 포트 7682 · Turnstile 은 넣지 않고 시작('잘 모르겠다' → 권장 기본값).
   정한 이름은 Web-QnA 와 같은 관례: 서버 폴더 /mnt/user/appdata/Web-Lotto · 컨테이너 Web-Lotto-app · 자료(SQLite) 폴더 /mnt/user/appdata/Web-Lotto-data · 이중화 없음(서버 한 대).
-  ★ 아직 서버에 설치하지 않았다. 도커 파일은 만들어 두었다(docker/ · docker-compose.yml · scripts/deploy.sh).
+  ★ 2026-11-07 환인에 첫 설치를 했다(커밋 6debada, 상자 Web-Lotto-app healthy). 바깥 https 는 NPM 호스트를 더하기 전이라 502 - 재훈 님 차례(아래 '처음 설치' 5).
 
 1사이클 반영 절차 (재훈 님이 정확히 '1사이클 반영해줘' 라고 할 때만. Web-QnA 와 같은 모양)
   1) 로컬: dev 에 커밋 → push dev → main 을 dev 에 맞춰 push(fast-forward). main 은 아직 없다 - 첫 반영 때 `git push origin dev:main` 이 만든다
@@ -36,7 +36,8 @@ Web-Lotto 한 줄: 로또 6/45 의 '예상번호' 를 만들어 보여 주는 �
   서버 접속은 paramiko 로, 접속 정보는 Rule_PW.txt (필요하면 임시로 pip install paramiko - requirements.txt 에는 넣지 않는다. 이미지에 필요 없다).
   ★ PC 의 Git Bash 에서 '/mnt/…' 같은 서버 경로를 윈도우 프로그램(python 등)의 인자로 넘기면 'C:/Program Files/Git/mnt/…' 로 바뀐다. MSYS_NO_PATHCONV=1 을 걸거나 경로를 표준 입력 · 스크립트 안에 둔다.
 
-처음 설치 (한 번만. 아직 하지 않았다 - 첫 '1사이클 반영해줘' 때 함께)
+처음 설치 (한 번만. ★ 2026-11-07 첫 '1사이클 반영해줘' 에서 했다 - 5) NPM 호스트만 재훈 님 몫으로 남음. 다시 설치할 때만 본다)
+  (운영 비밀번호는 정해 주시지 않아 무작위로 만들어 Rule_PW.txt [14] 에 적었다. 바꾸는 법도 [14] 에 있다.)
   1) 서버 /mnt/user/appdata/Web-Lotto 에 저장소를 main 으로 받는다. 비공개 저장소라 MEW · QnA 와 같은 자격 파일을 쓴다:
        git -c credential.helper='store --file=/mnt/user/appdata/.git-credentials' clone -b main https://github.com/hunmonkey/Web-Lotto.git Web-Lotto
        그 뒤 저장소 안에서 git config credential.helper 'store --file=/mnt/user/appdata/.git-credentials' (다음 fetch 부터 저절로)
@@ -125,7 +126,8 @@ scripts/deploy.sh      서버에서 새 판 올리기(굽기 → 올리기 → h
   · 희망번호 포함: 사용자가 직접 칠한 번호(wish)만 두고 나머지를 채운다. 다시 눌러도 채운 번호는 새로 뽑는다(칠한 번호와 구분해서 기억한다).
 3-5. 아직 정하지 않은 것
   · 실제 당첨번호 엑셀로 읽기 확인(미검증).
-  · 첫 설치: 서버에서 7682 가 비었는지 · 도커 굽기(이 PC 에 도커가 없어 굽기는 미검증) · NPM 호스트 · 운영 비밀번호 - 첫 '1사이클 반영해줘' 때.
+  · NPM 호스트(lotto.jaehoon.org) 추가 → 바깥 https 로 로그인 · 번호 만들기 확인(재훈 님) · NPM 이 실제 접속자 주소(X-Forwarded-For)를 넘기는지 확인.
+  · (확인 끝) 서버에서 7682 비어 있음 · 도커 굽기 · 상자 healthy · 실행 사용자 99:100 · 서버 안 로그인 · 번호 만들기.
 
 4. 보안 (이 사이트에 적용된 것)
 ------------------------------------------------------------

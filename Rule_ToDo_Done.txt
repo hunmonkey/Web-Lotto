@@ -101,3 +101,21 @@ AI 가 정한 기본값(재훈 님이 바꾸라고 하면 바꾼다): 기술 스
    .dockerignore 에 안 걸림. entrypoint 와 같은 uvicorn 옵션(--workers 1 --proxy-headers --forwarded-allow-ips --no-server-header)으로 이 PC 에서 띄워 /healthz ok · Server 헤더 없음 ·
    프록시 뒤 접속자(X-Forwarded-For)별로 잠금이 따로 셈(203.0.113.9 가 5번 틀린 뒤 6번째 429 · 다른 접속자 .10 은 401). 서버에는 접속하지 않았다.
    ★ 미검증: 도커 굽기(이 PC 에 도커 없음) · setpriv 실행 · 서버에서 7682 가 비었는지 · NPM 호스트 · 바깥 https 접속 · NPM 이 실제 접속자 주소를 넘기는지 - 모두 첫 설치 때 확인한다.
+
+------------------------------------------------------------
+[2026-11-07 1사이클 반영 - 첫 설치 (재훈 님 '1사이클 반영해줘')]
+★ 반영한 커밋 6debada(dev · main 같은 커밋). 실행 순서: 서버 사전 점검(읽기만) → 로컬 커밋 · push dev · push dev:main(main 처음 만듦) → 서버 설치 → 확인 → 기록.
+
+[완료] 8. 환인 서버에 첫 설치  (2026-11-07 11:15 → 11:32)
+  어디: 서버 HWAN-IN /mnt/user/appdata/Web-Lotto(저장소 main) · /mnt/user/appdata/Web-Lotto-data(자료) · 상자 Web-Lotto-app · Rule_PW.txt [14]
+  무엇/어떻게: 서버 사전 점검 - 호스트 HWAN-IN · docker 29.8.2 · compose v5.5.0 · 7682 비어 있음(상자 목록에도 없음) · Web-Lotto 폴더 없음 · git 자격 파일 있음.
+   git clone -b main(저장소 안에 자격 파일 설정) → .env(권한 600, SECRET_KEY · LOGIN_PASSWORD_HASH · SESSION_COOKIE_SECURE=true · APP_PORT=7682 · BIND_ADDR=172.17.0.1 · DATA_DIR) →
+   sh scripts/deploy.sh(굽기 → 올리기 → healthy 10초 → 옛 이미지 걷기, 댕글링 0개). 백업은 첫 설치라 없음.
+   운영 비밀번호 · SECRET_KEY 는 무작위로 만들어 Rule_PW.txt [14] 에 적었다(재훈 님이 정해 주시지 않아서. 값은 화면 · 기록에 찍지 않음).
+  검증(서버 안, SSH): docker ps healthy · 포트 172.17.0.1:7682->7682 · restart=unless-stopped · 메모리 512MB · 이미지 lotto-app 179MB · 환경(DATA_DIR=/srv/data · SESSION_COOKIE_SECURE=true · TZ=Asia/Seoul) ·
+   실행 사용자 Uid 99 / Gid 100 · 자료 폴더에 lotto.sqlite(99:100) · healthz ok · 127.0.0.1:7682 는 안 닿음(000) · 로그인 전 / 303 · /login 200 · /docs 404 · /api 401 ·
+   틀린 비밀번호 401 · 맞는 비밀번호 303 + 쿠키(HttpOnly · Secure · SameSite=lax · 12시간) · 로그인 뒤 / 200(제목 '로또 예상번호') · 헤더 없이 POST 403 · 무작위 5게임 만들기 정상 ·
+   통계는 당첨번호가 없어 fallback=true · 히스토리 빈 목록 · 즐겨찾기 빈 목록 · 정적 파일 css · js 200 · 응답 헤더 CSP · HSTS · nosniff · DENY · noindex · no-store · 컨테이너 로그에 오류 없음.
+   (서버 안 http 시험은 쿠키가 Secure 라 curl 이 쿠키를 안 보내 쿠키 값을 헤더로 직접 실었다. 처음 시험 스크립트의 따옴표 실수로 일부 curl 이 이 PC 에서 돈 것을 발견해 서버에서 다시 확인했다.)
+   서버의 임시 파일(/tmp 쿠키 · 배포 로그) 지움. 바깥 https://lotto.jaehoon.org/login → HTTP 502(NPM 호스트가 없어서 - 예상한 결과).
+   ★ 미검증: 바깥 https 접속 · NPM 이 실제 접속자 주소(X-Forwarded-For)를 넘기는지(지금은 도커 사설 주소로 보임) · 실제 엑셀 올리기 · 브라우저로 운영 화면 보기 - NPM 호스트를 더한 뒤.
