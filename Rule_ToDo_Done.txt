@@ -85,3 +85,19 @@ AI 가 정한 기본값(재훈 님이 바꾸라고 하면 바꾼다): 기술 스
    희망번호 · 다시 · ★ 담기 · 넣기 · 히스토리 펼침/접힘(단추 글자 보기 ↔ 닫기) · 엑셀 실제 파일 선택 · 공 색. 500px(폰) - 게임 탭 하나씩 크게 · 두 용지가 탭을 함께 씀 · 선 그림 · 가로 넘침 없음.
    콘솔 오류 0 · CSP 위반 0 · 외부 주소 요청 0 · 번호를 눌러 다시 그려도 키보드 초점 유지. 화면을 눈으로 본 것은 스크린샷 4장.
    ★ 미검증: 폰 실기기(500px 창에서만 봄) · 다른 브라우저(크롬만) · 어두운 모드(없음).
+
+------------------------------------------------------------
+[2026-11-07 Web-Lotto 운영 반영 준비]
+★ 재훈 님 결정: ① 서버 환인(Hwan-In) ② 포트 7682 ③ Turnstile 은 지금 넣지 않는다('잘 모르겠다' → 권장 기본값). 폴더 · 컨테이너 이름 · 자료 폴더 · 절차는 QnA 와 같게 AI 가 정함
+ (서버 폴더 /mnt/user/appdata/Web-Lotto · 컨테이너 Web-Lotto-app · 자료 /mnt/user/appdata/Web-Lotto-data · 이중화 없음).
+
+[완료] 7. 운영 반영 준비(파일 · 문서만)  (2026-11-07 13:00 → 11:16)
+  어디: docker/Dockerfile · docker/entrypoint.sh · docker-compose.yml · scripts/deploy.sh · .dockerignore · .env.example · Rule_Project_Etc.txt(0장 · 2장 · 3장 · 4장)
+  무엇/어떻게: Web-QnA 의 도커 구성을 본떠 상자 하나(Web-Lotto-app, 안쪽 7682, 바깥은 BIND_ADDR=docker0 172.17.0.1 에만) · nobody(99):users(100) 로 실행 · 일꾼 1개(로그인 잠금이 프로세스 메모리) ·
+   --proxy-headers · --no-server-header · 자료(SQLite)는 서버 폴더에 따로 · 메모리 512MB. deploy.sh = 굽기 → 올리기 → healthy 기다리기(2분) → 옛 이미지 걷기.
+   Rule_Project_Etc 0장에 '1사이클 반영 절차' 와 '처음 설치' 를 적었다(main 은 첫 반영 때 `git push origin dev:main` 으로 만든다).
+  검증: 파일 줄끝 모두 LF(CR 0) · git 이 .sh 를 eol=lf 로 다룸 · sh -n 으로 entrypoint.sh · deploy.sh 문법 OK · docker-compose.yml 을 YAML 로 읽어 이름(lotto) · 컨테이너(Web-Lotto-app) ·
+   포트 식(${BIND_ADDR:-127.0.0.1}:${APP_PORT:-7682}:7682) · 자료 연결(${DATA_DIR:-./data}:/srv/data) · env_file · 메모리 확인 · Dockerfile 이 COPY 하는 requirements.txt · app · docker/entrypoint.sh 가
+   .dockerignore 에 안 걸림. entrypoint 와 같은 uvicorn 옵션(--workers 1 --proxy-headers --forwarded-allow-ips --no-server-header)으로 이 PC 에서 띄워 /healthz ok · Server 헤더 없음 ·
+   프록시 뒤 접속자(X-Forwarded-For)별로 잠금이 따로 셈(203.0.113.9 가 5번 틀린 뒤 6번째 429 · 다른 접속자 .10 은 401). 서버에는 접속하지 않았다.
+   ★ 미검증: 도커 굽기(이 PC 에 도커 없음) · setpriv 실행 · 서버에서 7682 가 비었는지 · NPM 호스트 · 바깥 https 접속 · NPM 이 실제 접속자 주소를 넘기는지 - 모두 첫 설치 때 확인한다.

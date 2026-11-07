@@ -1,0 +1,31 @@
+# Web-Lotto 도커 구성 - 상자 하나.
+#
+# 실행:  docker compose up -d --build        (보통은 scripts/deploy.sh 가 한다)
+# 확인:  curl http://172.17.0.1:7682/healthz   (서버 안에서. 포트는 docker0 주소에만 열려 있다)
+#
+# 이 파일이 프로젝트 최상위에 있는 까닭: docker compose 는 compose 파일 옆의 .env 를 읽어 ${...} 를 채운다.
+
+name: lotto
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: Web-Lotto-app
+    restart: unless-stopped
+    labels:
+      net.unraid.docker.webui: "https://lotto.jaehoon.org/"
+    env_file:
+      - .env
+    environment:
+      # .env 의 DATA_DIR 은 '서버 쪽 경로' 다. 앱에는 컨테이너 안 경로를 준다.
+      DATA_DIR: /srv/data
+    volumes:
+      # 당첨번호 · 즐겨찾기(SQLite). 컨테이너를 지워도 남아야 한다.
+      - ${DATA_DIR:-./data}:/srv/data
+    mem_limit: 512m
+    ports:
+      # 운영 Unraid 서버는 BIND_ADDR=172.17.0.1 (docker0). 같은 서버의 NPM 만 닿고 사내망 PC 는 못 닿는다.
+      # 0.0.0.0 은 쓰지 않는다 - 프록시를 건너뛰고 http 로 붙게 된다.
+      - "${BIND_ADDR:-127.0.0.1}:${APP_PORT:-7682}:7682"
