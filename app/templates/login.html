@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}로그인 · 로또 예상번호{% endblock %}
+{% block body %}
+<main class="login">
+  <h1>로또 예상번호</h1>
+  <form method="post" action="/login" class="card">
+    <label for="pw">비밀번호</label>
+    <input id="pw" name="password" type="password" class="field" autocomplete="current-password" autofocus required maxlength="200">
+    {% if error %}<p class="err" role="alert">{{ error }}</p>{% endif %}
+    <button type="submit" class="btn primary big">들어가기</button>
+  </form>
+</main>
+{% endblock %}

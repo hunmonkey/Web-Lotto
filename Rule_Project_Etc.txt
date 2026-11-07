@@ -27,27 +27,42 @@ Web-Lotto 한 줄: 로또 6/45 의 '예상번호' 를 만들어 보여 주는 �
 ------------------------------------------------------------
 (버전은 requirements.txt 가 정본이다. 여기 적힌 것과 다르면 그 파일이 맞다.)
 - 파이썬 3.12. FastAPI + uvicorn 한 프로세스. 화면은 Jinja2 가 HTML 을 만들어 보낸다. 프런트엔드 프레임워크 없음.
-  (MEW · QnA 와 같은 관례. 까닭: 빌드 도구 없이 파일만 고쳐 바로 보이고, 서버가 HTML 을 만들어 보내 검색에도 잡힌다.)
+  (MEW · QnA 와 같은 관례. 까닭: 빌드 도구 없이 파일만 고쳐 바로 보인다.)
+  자바스크립트는 app/static/js/app.js 하나(바닐라). 번호판 칠하기 · 선 그리기 · 만들기 · 즐겨찾기 · 히스토리를 그리므로 메인 화면은 스크립트가 있어야 돈다.
+  로그인 · 로그아웃은 스크립트 없이도 된다(진짜 폼). 서버는 JSON 길(/api/...)만 내준다.
 - 저장소(DB): SQLite 파일 하나(DATA_DIR/lotto.sqlite), 표준 라이브러리 sqlite3. ★ AI 기본값(재훈 님 확인 대기) - 당첨번호가 1천 몇백 줄이고 쓰는 사람이 적어 충분하다. 커지면 PostgreSQL.
   저장하는 것: 과거 당첨번호(엑셀에서 옮김) · 즐겨찾기 번호.
-- 엑셀 읽기: openpyxl (requirements.txt 에 만들 때 더한다). 올릴 엑셀의 열 모양은 샘플 파일을 받아 정한다(미검증).
-- 로그인: 아이디 없이 비밀번호 하나(2026-11-07 재훈 님). Web-QnA 방식 - .env 의 LOGIN_PASSWORD_HASH(bcrypt) + itsdangerous 서명 쿠키, 잠금.
+- 엑셀 읽기: openpyxl(.xlsx 만, 5MB · 2만 줄까지). ★ 실제 당첨번호 엑셀의 모양을 아직 못 봤다(미검증) - app/services/excel.py 가 머리글로 찾고, 안 되면 숫자 모양으로 찾고,
+  둘 다 안 되면 틀리게 읽지 않고 오류 문장을 돌려준다. 실제 파일을 올려 본 뒤 필요하면 고친다.
+- 로그인: 아이디 없이 비밀번호 하나(2026-11-07 재훈 님). 구현됨(app/auth.py) - .env 의 LOGIN_PASSWORD_HASH(bcrypt) + itsdangerous 서명 쿠키(HttpOnly · SameSite=Lax · 운영 Secure · 12시간),
+  주소당 5회 · 전체 30회(10분) 틀리면 잠금.
   ★ 비밀번호가 하나라 쓰는 사람도 한 명으로 본다 - 즐겨찾기는 사람별로 나누지 않는다(AI 해석, 확인 대기).
 - 개발 PC 환경: 가상환경 `.venv` (git 에 올리지 않는다).
     만들기:  py -3.12 -m venv .venv  →  .venv/Scripts/python.exe -m pip install -r requirements.txt
+    설정:    copy .env.example .env 한 뒤 SECRET_KEY · LOGIN_PASSWORD_HASH 를 채운다(해시: .venv/Scripts/python.exe -m app.cli hash-password). 개발 PC 는 SESSION_COOKIE_SECURE=false.
     켜기:    .venv/Scripts/python.exe -m uvicorn app.main:app --reload --port 8000   (http://127.0.0.1:8000)
 
 2. 주요 디렉토리 및 파일 역할 (Directory Structure)
 ------------------------------------------------------------
-app/main.py            FastAPI 앱 하나. 길: GET /(첫 화면) · GET /healthz(평문 'ok', 도커 상태 확인용).
-                       /docs · /redoc · /openapi.json 은 끈다(운영에 열어 둘 까닭이 없다).
-app/templates/         Jinja2 화면. 지금은 index.html 한 장(자리 표시).
+app/main.py            FastAPI 앱 하나. 화면 길: GET / (메인, 로그인 필요) · GET·POST /login · POST /logout · GET /healthz(평문 'ok'). 보안 헤더 한 곳.
+                       JSON 길(로그인 필요, 바꾸는 요청은 X-Requested-With: fetch 필요): POST /api/generate · GET /api/history · POST /api/history/upload ·
+                       GET·POST /api/favorites · DELETE /api/favorites/{id}.  /docs · /redoc · /openapi.json 은 끈다.
+app/config.py          설정(.env). SECRET_KEY · LOGIN_PASSWORD_HASH · SESSION_MAX_HOURS · SESSION_COOKIE_SECURE · DATA_DIR.
+app/auth.py            비밀번호 확인(bcrypt) · 서명 쿠키 세션 · 틀린 횟수 잠금 · JSON 길 문지기(api_guard).
+app/store.py           SQLite(DATA_DIR/lotto.sqlite). 표 rounds(과거 당첨번호) · favorites(즐겨찾기). 표를 바꾸면 SCHEMA 에 더한다(ORM · alembic 없음).
+app/services/generate.py   예상번호 만들기(무작위 · 통계 · 희망번호 포함). 통계의 몫 계산은 이 파일 weights() 가 정본.
+app/services/excel.py      당첨번호 엑셀 읽기(머리글 → 숫자 모양 순으로 찾는다).
+app/cli.py             명령줄: hash-password(로그인 비밀번호 해시 만들기).
+app/templates/         Jinja2 틀. base.html · login.html · index.html(메인 틀: 만드는 방식 · 히스토리 · 즐겨찾기 · 용지 두 장의 빈 그릇).
+app/static/css/        tokens.css(색 · 번호판 칸 크기 값 - 값은 여기에만) · app.css(모양). 인라인 style 은 쓰지 않는다(CSP).
+app/static/js/app.js   메인 화면. 상태(state)가 바뀌면 render() 가 번호판 · 선 · 즐겨찾기 · 히스토리를 다시 그린다.
+.env.example           환경변수 보기틀(.env 는 git 제외).
 requirements.txt       서버 의존성(큰 자리만 고정).
 Rule_*.txt             작업 규정 · 기록. 읽는 순서는 CLAUDE.md 0-2 · 7.
   Rule_ToDo.txt / Rule_ToDo_Done.txt   진행 중 · 끝난 작업 기록
   Rule_UIUX.txt                        화면 규정
   Rule_PW.txt                          비밀 값(git 제외)
-(새 파일을 만들면 이 장에 한 줄을 더한다. 아직 없는 것: app/static · app/config.py · docker/ · scripts/ · .env.example - 필요해질 때 만든다.)
+(새 파일을 만들면 이 장에 한 줄을 더한다. 아직 없는 것: docker/ · scripts/ · 시험 코드 - 운영 반영을 정할 때 만들고, 시험 코드는 CLAUDE.md 6-1 대로 쓰고 지운다.)
 
 3. 아키텍처 특이사항 (주의)
 ------------------------------------------------------------
@@ -66,15 +81,22 @@ Rule_*.txt             작업 규정 · 기록. 읽는 순서는 CLAUDE.md 0-2 �
   ② 과거 당첨번호는 엑셀 파일을 올려 DB 에 옮긴다(업로드 + 자료 추출). 같은 회차는 덮어쓴다(AI 기본값). 공식 자료의 제공 방식은 확인하지 않았다 - 미검증.
   ③ 로그인 필요(비밀번호만). 번호 저장은 즐겨찾기.
   ④ 운영 주소 https://lotto.jaehoon.org (예정, 미연결) · GitHub Web-Lotto(비공개) · 개발은 dev 브랜치만.
-  ⑤ 화면 배치: 왼쪽 위 만드는 방식 선택기 · 왼쪽 아래 즐겨찾기 · 가운데 실제 로또 용지 모양(1장 5게임) · 오른쪽 1등 번호 히스토리. 자세한 것은 Rule_UIUX.txt 2장.
-3-4. 아직 정하지 않은 것
-  · 엑셀 샘플 파일(열 모양) - 재훈 님이 보내 주셔야 올리기 기능을 시작할 수 있다.
-  · 통계 방식의 정확한 계산(시안은 최근 10회 빈도로 가중하는 흉내일 뿐이다).
-  · 도커 포트 · 서버 폴더 · 배포 스크립트.
+  ⑤ 화면 배치: 왼쪽 위 만드는 방식 선택기 · 왼쪽 아래 즐겨찾기 · 가운데 실제 로또 용지 모양(1장 5게임) · 1등 번호 히스토리는 '5게임 만들기' 위 단추를 누르면 펼쳐진다(오른쪽 칸은 2026-11-07 재훈 님 지시로 없앰). 자세한 것은 Rule_UIUX.txt 2장.
+3-4. 통계 방식의 계산 (2026-11-07 AI 가 정함 - generate.py)
+  · 빈도 = 번호별로 과거 당첨번호 6개에 나온 횟수(보너스 번호는 세지 않는다).
+  · 많이 나온 번호: 몫 = 1 + (횟수 − 가장 적은 횟수). 오래 안 나온 번호: 몫 = 1 + (가장 많은 횟수 − 횟수). 섞어서: 남은 자리의 절반(올림)은 많이, 나머지는 오래 안 나온 쪽에서.
+  · 몫에 따라 서로 다른 6개를 뽑는다(암호학적 난수). 당첨번호가 하나도 없으면 무작위로 물러나고 화면에 알린다.
+  · 희망번호 포함: 사용자가 직접 칠한 번호(wish)만 두고 나머지를 채운다. 다시 눌러도 채운 번호는 새로 뽑는다(칠한 번호와 구분해서 기억한다).
+3-5. 아직 정하지 않은 것
+  · 실제 당첨번호 엑셀로 읽기 확인(미검증) · 도커 포트 · 서버 폴더 · 배포 스크립트.
 
 4. 보안 (이 사이트에 적용된 것)
 ------------------------------------------------------------
 - 비밀 값은 `.env` 와 `Rule_PW.txt` 에만 둔다. 둘 다 .gitignore 에 있다(`.env.example` 만 올린다). 규정 문서 · 기록 · 코드에는 적지 않는다.
 - FastAPI 자동 문서(/docs · /redoc · /openapi.json)는 꺼 두었다.
 - 사용자가 보낸 값(번호 · 개수 · 조건)은 서버에서 개수와 범위(1~45, 중복 없음)를 반드시 다시 검사한다. 화면의 검사만 믿지 않는다.
-- 보안 헤더 · 로그인 잠금 같은 것은 아직 없다. 로그인이나 운영 반영을 정할 때 Web-QnA 의 main.py · Rule_Security.txt 를 참고해 더한다.
+- 로그인: 비밀번호는 bcrypt 해시로만 둔다(원문은 어디에도 없다). 쿠키는 서명 + HttpOnly + SameSite=Lax(운영은 Secure + HSTS). 틀리면 잠금(주소당 5회 · 전체 30회 / 10분).
+- JSON 길은 로그인을 확인하고, 바꾸는 요청(POST · DELETE)은 X-Requested-With: fetch 헤더가 없으면 막는다(다른 사이트에서 몰래 보내는 요청 방지).
+- 보안 헤더: CSP(자기 사이트만 · 인라인 스크립트/스타일 금지) · nosniff · X-Frame-Options DENY · Referrer-Policy · Permissions-Policy · noindex · 화면은 no-store.
+- 엑셀 올리기: .xlsx 만 · 5MB · 2만 줄까지. 읽다 틀리면 DB 에 아무것도 넣지 않는다(읽기를 다 마친 뒤에 한 번에 넣는다).
+- 아직 없는 것: Cloudflare Turnstile(로그인 봇 확인) · 서버 이중화 · 바깥 백업 - 운영 반영을 정할 때 Web-QnA 의 Rule_Security.txt 를 참고해 정한다.

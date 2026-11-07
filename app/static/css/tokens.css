@@ -1,0 +1,51 @@
+/* 색 · 크기 값은 여기에만 둔다(Rule_UIUX 0장). 값의 출처는 2026-11-07 확정 시안. */
+:root {
+  --bg: #F4F1EC;
+  --surface: #fff;
+  --ink: #1E2430;
+  --ink2: #5B6270;
+  --line: #E2DDD5;
+  --line2: #D4CEC4;
+  --accent: #1F3A68;
+  --accent-bg: #EEF2FA;
+  --danger: #A3342A;
+
+  /* 예상번호 용지(분홍 바탕 · 붉은 선) */
+  --paper-bg: #FFF4EE;
+  --paper-edge: #E7A59B;
+  --paper-ink: #C23B2E;
+  --paper-panel: #FFFAF7;
+  --paper-line: #F0C5BD;
+  --paper-tag: #8A3329;
+  --mark: #23272F;
+
+  /* 번호 이은 선 용지(흑백) */
+  --mono: #111;
+  --mono-line: #BDBDBD;
+  --mono-ink2: #555;
+  --mono-off: #6B6B6B;
+
+  /* 공 색 - 1~10 노랑 · 11~20 파랑 · 21~30 빨강 · 31~40 회색 · 41~45 초록 */
+  --b1: #FBC400;
+  --b2: #69C8F2;
+  --b3: #FF7272;
+  --b4: #AAAAAA;
+  --b5: #B0D840;
+  --ball-ink: #1A1A1A;
+
+  /* 번호판 한 칸(두 용지가 함께 쓴다 - 모양이 같아야 한다) */
+  --cw: 20px;
+  --ch: 24px;
+  --gap: 2px;
+  --fs: 10px;
+}
+
+/* 폰: 용지는 한 게임씩 크게. 가로가 좁으면 칸 폭을 줄여 용지 안에 맞춘다. */
+@media (max-width: 760px) {
+  :root {
+    --cw: min(42px, calc((100vw - 96px) / 7));
+    --ch: 44px;
+    --gap: 3px;
+    --fs: 15px;
+  }
+}
