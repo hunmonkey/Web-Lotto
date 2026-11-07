@@ -1,0 +1,49 @@
+### Logs
+*.log
+logs/
+
+### Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+tmp/
+temp/
+scratch/
+.cache/
+.history/
+
+### OS local files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+### 로컬 자료 (SQLite 등. 운영은 .env 의 DATA_DIR)
+/data/
+*.sqlite
+*.sqlite-journal
+*.sqlite-shm
+*.sqlite-wal
+
+### Local environment overrides
+/.env
+/.env.*
+!/.env.example
+.vscode/
+
+### Local AI/tool state
+.codex/
+.agents/
+
+### local secrets
+Rule_PW.txt
+
+### Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+### Claude Code
+# .claude/settings.json 은 함께 쓰는 설정이라 올린다. settings.local.json 은 사람·PC 마다 다른 개인 설정이라 올리지 않는다.
+.claude/settings.local.json
